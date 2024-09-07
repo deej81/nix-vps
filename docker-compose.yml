@@ -1,0 +1,27 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v3.0"
+    container_name: "traefik"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro"
+
+  traefik-forward-auth:
+    image: thomseddon/traefik-forward-auth:2
+    environment:
+      - PROVIDERS_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - PROVIDERS_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - LOG_LEVEL=debug
+      - SECRET=${GOOGLE-SECRET}
+      - INSECURE_COOKIE=true # Example assumes no https, do not use in production
+
+  whoami:
+    image: "traefik/whoami"
+    container_name: "simple-service"

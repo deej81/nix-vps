@@ -1,0 +1,24 @@
+# dynamic_conf.yml
+http:
+
+  middlewares:
+    oauth-forward-auth:
+      forwardAuth:
+        address: "http://traefik-forward-auth:4181"
+        trustForwardHeader: true
+        authResponseHeaders: "X-Forwarded-User"
+
+  routers:
+    my-router:
+      rule: "Host(`dns host here`)"
+      service: whoami
+      entryPoints:
+        - web
+      middlewares:
+        - oauth-forward-auth
+
+  services:
+    whoami:
+      loadBalancer:
+        servers:
+          - url: "http://simple-service:80"
