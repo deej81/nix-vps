@@ -36,32 +36,59 @@
 
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
 
+
+      # configure the development shell loaded by direnv
+      default = forAllSystems (system:
+        let pkgs = nixpkgsFor.${system};
+        in
+        pkgs.mkShell {
+          nativeBuildInputs = with pkgs; [
+            nix
+            git
+            just
+            go
+          ];
+        }
+      );
+
       packages = forAllSystems (system:
         let pkgs = nixpkgsFor.${system};
-        in import ./shell.nix { inherit pkgs; }
-      );
-
-      devShells = forAllSystems (system:
-        let pkgs = nixpkgsFor.${system};
-        in import ./shell.nix { inherit pkgs; }
-      );
-
-      nixosConfigurations.digitalocean = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          disko.nixosModules.disko
-          { disko.devices.disk.main.device = "/dev/vda"; }
-          {
-            # do not use DHCP, as DigitalOcean provisions IPs using cloud-init
-            networking.useDHCP = nixpkgs.lib.mkForce false;
-
-            services.cloud-init = {
-              enable = true;
-              network.enable = true;
+        in {
+          default = pkgs.buildGoModule rec {
+            pname = "hello";
+            version = "0.1.0";
+            src = ./.;
+            meta = with pkgs.lib; {
+              description = "A simple hello world program";
+              license = licenses.mit;
             };
-          }
-          ./server-config/configuration.nix
-        ];
-      };
+            vendorHash = null;
+          };
+        }
+      );
+
+      init_script = forAllSystems (system:
+        let pkgs = nixpkgsFor.${system};
+        in {
+          default =
+            pkgs.writeScript "runit" ''
+              #!/usr/bin/env sh
+              ${pkgs.copier}/bin/copier copy https://github.com/deej81/nix-vps ~/nix-vps
+            '';
+        }
+      );
+
+      # Add an app to directly run copier
+      apps = forAllSystems (system:
+        let pkgs = nixpkgsFor.${system};
+        in {
+          initialise = {
+            type = "app";
+            description = "Run Copier";
+            # Define how copier will be run using nix run
+            program = "${self.packages.${system}.default}/bin/nix-vps";
+          };
+        }
+      );
     };
 }
