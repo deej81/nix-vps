@@ -73,7 +73,7 @@
           default =
             pkgs.writeScript "runit" ''
               #!/usr/bin/env sh
-              ${pkgs.copier}/bin/copier copy https://github.com/deej81/nix-vps ~/nix-vps
+              ${pkgs.copier}/bin/copier copy https://github.com/deej81/nix-vps .
             '';
         }
       );
