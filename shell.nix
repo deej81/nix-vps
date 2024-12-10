@@ -20,7 +20,7 @@
       age
       ssh-to-age
       sops
-      doct
+      doctl
       _1password
       fzf
       # Add Python 3 
